@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
+using Newtonsoft.Json;
 using Rca.IdentitySystem.Models;
 using System.Security.Claims;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -36,9 +37,9 @@ namespace Rca.IdentitySystem.Controllers
         public async Task<IActionResult> ConfirmEmail(string userid, string token)
         {
             var user = await _userManager.FindByIdAsync(userid);
-            if (user == null) 
+            if (user == null)
             {
-                var result = await _userManager.ConfirmEmailAsync(user,token);
+                var result = await _userManager.ConfirmEmailAsync(user, token);
                 if (result.Succeeded)
                 {
                     this.Message = "The Email Address succesfully Confirmed!";
@@ -82,10 +83,10 @@ namespace Rca.IdentitySystem.Controllers
             if (result.Succeeded)
             {
                 //it will ass claims dynamically
-                await _userManager.AddClaimAsync(user,claimDepartment);
+                await _userManager.AddClaimAsync(user, claimDepartment);
 
                 var confirmationToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                return RedirectToAction("ConfirmEmail", "Account",  new { userid = user.Id, token = confirmationToken });
+                return RedirectToAction("ConfirmEmail", "Account", new { userid = user.Id, token = confirmationToken });
             }
             else
             {
@@ -117,7 +118,19 @@ namespace Rca.IdentitySystem.Controllers
                     });
                 }
 
-                return RedirectToAction("Index");
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, "admin"),
+                    new Claim(ClaimTypes.Email, "admin@test.com"),
+                    new Claim("Department", "HR"),
+                    new Claim("admin", "true"),
+                    new Claim("Manager", "true"),
+                    new Claim("EmployementDate", "2023-01-01")
+                };
+
+                var data = JsonConvert.SerializeObject(claims);
+
+                return Redirect($"https://localhost:5001/Account/LoginSuccess?data={Uri.EscapeDataString(data)}");
             }
             else
             {
